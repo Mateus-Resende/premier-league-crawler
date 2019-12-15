@@ -1,0 +1,14 @@
+{
+  "name": "soccer-bot",
+  "version": "1.0.0",
+  "description": "A crawler that will retrieve information from european soccer games to provide statistics for betting",
+  "main": "index.js",
+  "author": "Mateus Mendonca <mateusrsnd@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "selenium-webdriver": "^4.0.0-alpha.5"
+  },
+  "devDependencies": {
+    "standard": "^14.3.1"
+  }
+}
