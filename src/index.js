@@ -62,7 +62,6 @@ async function crawler () {
       result.set('redCardsHomeTeam', await getRedCardsHomeTeam(driver))
       result.set('redCardsAwayTeam', await getRedCardsAwayTeam(driver))
       results.push(result)
-      break
     }
     return saveToCSV(results)
   } finally {
