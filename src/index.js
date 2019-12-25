@@ -4,6 +4,7 @@ const fs = require('fs')
 
 const PREMIER_LEAGUE_URL = 'https://www.premierleague.com'
 const ATTRIBUTES = [
+  'id',
   'kickoff',
   'referee',
   'homeTeam',
@@ -32,40 +33,47 @@ const DATA_MATCH_KICKOFF = 'data-kickoff'
 
 async function crawler () {
   const options = new firefox.Options().setBinary('/Applications/Firefox.app/Contents/MacOS/firefox-bin')
+  const results = []
 
   const driver = new Builder()
     .forBrowser('firefox').setFirefoxOptions(options).build()
-
   try {
-    const results = []
     await driver.get([PREMIER_LEAGUE_URL, 'results'].join('/'))
-
     const matchIds = await getMatchIds(driver)
 
     for (let i = 0; i < matchIds.length; i++) {
-      const currentMatch = matchIds[i]
-      await driver.get([PREMIER_LEAGUE_URL, 'match', currentMatch].join('/'))
-      const result = new Map()
-      result.set('kickoff', await getKickoffDate(driver))
-      result.set('referee', await getReferee(driver))
+      try {
+        const currentMatch = matchIds[i]
+        await driver.get([PREMIER_LEAGUE_URL, 'match', currentMatch].join('/'))
+        const result = new Map()
+        result.set('id', currentMatch)
+        result.set('kickoff', await getKickoffDate(driver))
+        result.set('referee', await getReferee(driver))
 
-      result.set('homeTeam', await getHomeTeam(driver))
-      result.set('awayTeam', await getAwayTeam(driver))
+        result.set('homeTeam', await getHomeTeam(driver))
+        result.set('awayTeam', await getAwayTeam(driver))
 
-      const goals = (await getGoals(driver)).split('-')
-      result.set('goalsHomeTeam', goals[0])
-      result.set('goalsAwayTeam', goals[1])
+        const goals = (await getGoals(driver)).split('-')
+        result.set('goalsHomeTeam', goals[0])
+        result.set('goalsAwayTeam', goals[1])
 
-      result.set('yellowCardsHomeTeam', await getYellowCardsHomeTeam(driver))
-      result.set('yellowCardsAwayTeam', await getYellowCardsAwayTeam(driver))
+        result.set('yellowCardsHomeTeam', await getYellowCardsHomeTeam(driver))
+        result.set('yellowCardsAwayTeam', await getYellowCardsAwayTeam(driver))
 
-      result.set('redCardsHomeTeam', await getRedCardsHomeTeam(driver))
-      result.set('redCardsAwayTeam', await getRedCardsAwayTeam(driver))
-      results.push(result)
+        result.set('redCardsHomeTeam', await getRedCardsHomeTeam(driver))
+        result.set('redCardsAwayTeam', await getRedCardsAwayTeam(driver))
+        results.push(result)
+      } catch (err) {
+        console.error(`Match with id ${matchIds[i]} could not be retrieved`)
+        const result = new Map()
+        result.set('id', matchIds[i])
+        results.push(result)
+      }
     }
     return saveToCSV(results)
   } finally {
     driver.quit()
+    saveToCSV(results, 'partial.csv')
   }
 }
 
@@ -162,9 +170,9 @@ async function getRedCardsAwayTeam (driver) {
   return redCards.length
 }
 
-function saveToCSV (results) {
+function saveToCSV (results, filename = 'consolidated.csv') {
   try {
-    fs.writeFileSync('consolidated.csv', prepareData(results))
+    fs.writeFileSync(filename, prepareData(results))
   } catch (err) {
     console.error(err)
   }
