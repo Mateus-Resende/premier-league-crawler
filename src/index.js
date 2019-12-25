@@ -60,9 +60,11 @@ module.exports = class Crawler {
         }
       }
       return saveToCSV()
+    } catch (err) {
+      console.error(err)
+      saveToCSV('partial.csv')
     } finally {
       driver.quit()
-      saveToCSV('partial.csv')
     }
   }
 }
