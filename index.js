@@ -1,2 +1,3 @@
-const crawler = require('./src')
-crawler()
+const Crawler = require('./src')
+const crawler = new Crawler()
+crawler.run()
