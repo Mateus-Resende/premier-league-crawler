@@ -44,7 +44,7 @@ module.exports = class Crawler {
     driver = driver.build()
   }
 
-  async run () {
+  async run() {
     try {
       const inserttedIds = getConsolidatedDataByAttribute('id')
       await driver.get([PREMIER_LEAGUE_URL, 'results'].join('/'))
