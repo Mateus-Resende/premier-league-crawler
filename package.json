@@ -5,6 +5,9 @@
   "main": "index.js",
   "author": "Mateus Mendonca <mateusrsnd@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "test": "./node_modules/standard/bin/cmd.js"
+  },
   "dependencies": {
     "selenium-webdriver": "^4.0.0-alpha.5"
   },
