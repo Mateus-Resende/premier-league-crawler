@@ -31,7 +31,10 @@ const RED_CARDS_AWAY_CLASS = '.timeLine.timeLineContainer .eventLine .event.away
 const DATA_COMP_MATCH_ITEM_ID = 'data-comp-match-item'
 const DATA_MATCH_KICKOFF = 'data-kickoff'
 
-const options = new firefox.Options().setBinary('/Applications/Firefox.app/Contents/MacOS/firefox-bin')
+const options = new firefox
+  .Options()
+  .setBinary('/Applications/Firefox.app/Contents/MacOS/firefox-bin')
+  .headless()
 const results = []
 let driver = new Builder()
   .forBrowser('firefox').setFirefoxOptions(options)
@@ -43,15 +46,15 @@ module.exports = class Crawler {
 
   async run () {
     try {
+      const inserttedIds = getConsolidatedDataByAttribute('id')
       await driver.get([PREMIER_LEAGUE_URL, 'results'].join('/'))
-      const matchIds = await getMatchIds()
+      const matchIds = (await getMatchIds()).filter((id) => !inserttedIds.includes(id))
 
       for (let i = 0; i < matchIds.length; i++) {
         try {
           const currentMatch = matchIds[i]
           const result = await extractMatchData(currentMatch)
           results.push(result)
-          break
         } catch (err) {
           console.error(`Match with id ${matchIds[i]} could not be retrieved`)
           const result = new Map()
@@ -91,6 +94,18 @@ async function extractMatchData (currentMatch) {
   result.set('redCardsAwayTeam', await getRedCardsAwayTeam())
 
   return result
+}
+
+function getConsolidatedDataByAttribute (attribute) {
+  const data = readFromCSV().toString().split('\n')
+  const keys = data[0].split(',')
+  const consolidatedData = []
+  const indexKey = keys.indexOf(attribute)
+  for (let i = 1; i < data.length; i++) {
+    const rawDatum = data[i].split(',')
+    consolidatedData.push(rawDatum[indexKey])
+  }
+  return consolidatedData
 }
 
 async function getMatchIds () {
@@ -186,16 +201,25 @@ async function getRedCardsAwayTeam () {
   return redCards.length
 }
 
-function saveToCSV (filename = 'consolidated.csv') {
+function readFromCSV (filename = 'consolidated.csv') {
   try {
-    fs.writeFileSync(filename, prepareData())
+    return fs.readFileSync(filename)
   } catch (err) {
     console.error(err)
   }
 }
 
-function prepareData () {
+function saveToCSV (filename = 'consolidated.csv') {
+  try {
+    const fileExists = fs.existsSync(filename)
+    fs.writeFileSync(filename, prepareData(fileExists), { flag: 'a' })
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+function prepareData (fileExists = true) {
   const parsedResults = results.map(result => ATTRIBUTES.map(attr => result.get(attr)).join(','))
-  parsedResults.unshift(ATTRIBUTES.join(','))
+  if (!fileExists) parsedResults.unshift(ATTRIBUTES.join(','))
   return parsedResults.join('\n')
 }
